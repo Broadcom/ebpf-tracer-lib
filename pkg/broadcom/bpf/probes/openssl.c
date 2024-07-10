@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2024 Broadcom Corporation
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 #include "vmlinux.h"
 #include "bpf_tracing.h"
 #include "bpf_helpers.h"
@@ -12,7 +25,7 @@ const socket_data *unused_1 __attribute__((unused));
 
 SEC("uprobe/libssl.so:SSL_write_ex")
 int BPF_UPROBE(uprobe_ssl_write_ex, void *ssl, const void *buf, int num, size_t *written) {
-    u64 id = bpf_get_current_pid_tgid();
+    __u64 id = bpf_get_current_pid_tgid();
 
     if (!isWhitelisted(id)) {
         return 0;
@@ -21,9 +34,9 @@ int BPF_UPROBE(uprobe_ssl_write_ex, void *ssl, const void *buf, int num, size_t 
     bpf_debug_printk("openssl SSL_write_ex id=%d", id);
 
     openssl_args_t ssl_args = {};
-    ssl_args.buf = (u64)buf;
-    ssl_args.ssl = (u64)ssl;
-    ssl_args.len_ptr = (u64)written;
+    ssl_args.buf = (__u64)buf;
+    ssl_args.ssl = (__u64)ssl;
+    ssl_args.len_ptr = (__u64)written;
 
     bpf_map_update_elem(&ssl_write_args, &id, &ssl_args, BPF_ANY);
 
@@ -32,7 +45,7 @@ int BPF_UPROBE(uprobe_ssl_write_ex, void *ssl, const void *buf, int num, size_t 
 
 SEC("uretprobe/libssl.so:SSL_write_ex")
 int BPF_URETPROBE(uretprobe_ssl_write_ex, int ret) {
-    u64 id = bpf_get_current_pid_tgid();
+    __u64 id = bpf_get_current_pid_tgid();
 
     if (!isWhitelisted(id)) {
         return 0;
@@ -57,7 +70,7 @@ int BPF_URETPROBE(uretprobe_ssl_write_ex, int ret) {
 
 SEC("uprobe/libssl.so:SSL_shutdown")
 int BPF_UPROBE(uprobe_ssl_shutdown, void *s) {
-    u64 id = bpf_get_current_pid_tgid();
+    __u64 id = bpf_get_current_pid_tgid();
 
     if (!isWhitelisted(id)) {
         return 0;
@@ -73,7 +86,7 @@ int BPF_UPROBE(uprobe_ssl_shutdown, void *s) {
 
 SEC("uprobe/libssl.so:SSL_do_handshake")
 int BPF_UPROBE(uprobe_ssl_do_handshake, void *s) {
-    u64 id = bpf_get_current_pid_tgid();
+    __u64 id = bpf_get_current_pid_tgid();
 
     if (!isWhitelisted(id)) {
         return 0;
@@ -86,7 +99,7 @@ int BPF_UPROBE(uprobe_ssl_do_handshake, void *s) {
 
 SEC("uretprobe/libssl.so:SSL_do_handshake")
 int BPF_URETPROBE(uretprobe_ssl_do_handshake, int ret) {
-    u64 id = bpf_get_current_pid_tgid();
+    __u64 id = bpf_get_current_pid_tgid();
     
     if (!isWhitelisted(id)) {
         return 0;
@@ -97,10 +110,10 @@ int BPF_URETPROBE(uretprobe_ssl_do_handshake, int ret) {
     return 0;
 }
 
-
+// int SSL_read(SSL *ssl, void *buf, int num);
 SEC("uprobe/libssl.so:SSL_read")
 int BPF_UPROBE(uprobe_ssl_read, void *ssl, const void *buf, int num) {
-    u64 id = bpf_get_current_pid_tgid();
+    __u64 id = bpf_get_current_pid_tgid();
 
     if (!isWhitelisted(id)) {
         return 0;
@@ -109,8 +122,8 @@ int BPF_UPROBE(uprobe_ssl_read, void *ssl, const void *buf, int num) {
     bpf_debug_printk("openssl SSL_read id=%d ssl=%d", id, ssl);
 
     openssl_args_t ssl_args = {};
-    ssl_args.buf = (u64)buf;
-    ssl_args.ssl = (u64)ssl;
+    ssl_args.buf = (__u64)buf;
+    ssl_args.ssl = (__u64)ssl;
     ssl_args.len_ptr = 0;
 
     bpf_map_update_elem(&ssl_read_args, &id, &ssl_args, BPF_ANY);
@@ -118,11 +131,10 @@ int BPF_UPROBE(uprobe_ssl_read, void *ssl, const void *buf, int num) {
     return 0;
 }
 
-
 // int SSL_read(SSL *ssl, void *buf, int num);
 SEC("uretprobe/libssl.so:SSL_read")
 int BPF_URETPROBE(uretprobe_ssl_read, int ret) {
-    u64 id = bpf_get_current_pid_tgid();
+    __u64 id = bpf_get_current_pid_tgid();
 
     if (!isWhitelisted(id)) {
         return 0;
@@ -139,7 +151,7 @@ int BPF_URETPROBE(uretprobe_ssl_read, int ret) {
 
 SEC("uprobe/libssl.so:SSL_read_ex")
 int BPF_UPROBE(uprobe_ssl_read_ex, void *ssl, const void *buf, int num, size_t *readbytes) {
-    u64 id = bpf_get_current_pid_tgid();
+    __u64 id = bpf_get_current_pid_tgid();
 
     if (!isWhitelisted(id)) {
         return 0;
@@ -148,9 +160,9 @@ int BPF_UPROBE(uprobe_ssl_read_ex, void *ssl, const void *buf, int num, size_t *
     bpf_debug_printk("openssl SSL_read_ex id=%d", id);
 
     openssl_args_t ssl_args = {};
-    ssl_args.buf = (u64)buf;
-    ssl_args.ssl = (u64)ssl;
-    ssl_args.len_ptr = (u64)readbytes;
+    ssl_args.buf = (__u64)buf;
+    ssl_args.ssl = (__u64)ssl;
+    ssl_args.len_ptr = (__u64)readbytes;
 
     bpf_map_update_elem(&ssl_read_args, &id, &ssl_args, BPF_ANY);
     bpf_map_update_elem(&ssl_pid_metadata, &ssl_args.ssl, &id, BPF_NOEXIST);
@@ -160,7 +172,7 @@ int BPF_UPROBE(uprobe_ssl_read_ex, void *ssl, const void *buf, int num, size_t *
 
 SEC("uretprobe/libssl.so:SSL_read_ex")
 int BPF_URETPROBE(uretprobe_ssl_read_ex, int ret) {
-    u64 id = bpf_get_current_pid_tgid();
+    __u64 id = bpf_get_current_pid_tgid();
 
     if (!isWhitelisted(id)) {
         return 0;
@@ -182,10 +194,10 @@ int BPF_URETPROBE(uretprobe_ssl_read_ex, int ret) {
     return 0;
 }
 
-
+// int SSL_write(SSL *ssl, const void *buf, int num);
 SEC("uprobe/libssl.so:SSL_write")
 int BPF_UPROBE(uprobe_ssl_write, void *ssl, const void *buf, int num) {
-    u64 id = bpf_get_current_pid_tgid();
+    __u64 id = bpf_get_current_pid_tgid();
 
     if (!isWhitelisted(id)) {
         return 0;
@@ -194,8 +206,8 @@ int BPF_UPROBE(uprobe_ssl_write, void *ssl, const void *buf, int num) {
     bpf_debug_printk("openssl SSL_write id=%d ssl=%d", id, ssl);
 
     openssl_args_t ssl_args = {};
-    ssl_args.buf = (u64)buf;
-    ssl_args.ssl = (u64)ssl;
+    ssl_args.buf = (__u64)buf;
+    ssl_args.ssl = (__u64)ssl;
     ssl_args.timestamp = bpf_ktime_get_ns();
     ssl_args.len_ptr = 0;
 
@@ -203,9 +215,10 @@ int BPF_UPROBE(uprobe_ssl_write, void *ssl, const void *buf, int num) {
     return 0;
 }
 
+// int SSL_write(SSL *ssl, const void *buf, int num);
 SEC("uretprobe/libssl.so:SSL_write")
 int BPF_URETPROBE(uretprobe_ssl_write, int ret) {
-    u64 id = bpf_get_current_pid_tgid();
+    __u64 id = bpf_get_current_pid_tgid();
 
     if (!isWhitelisted(id)) {
         return 0;

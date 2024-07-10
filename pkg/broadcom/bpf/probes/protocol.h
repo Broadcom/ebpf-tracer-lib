@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2024 Broadcom Corporation
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 #ifndef __PROTO_H__
 #define __PROTO_H__
 
@@ -69,13 +82,13 @@ enum protocol_monitored_type {
 };
 
 typedef struct recv_args {
-    u64 sock_ptr; 
-    u64 iovec_ptr;
+    __u64 sock_ptr; 
+    __u64 iovec_ptr;
 } recv_args_t;
 
 
 typedef struct data_args {
-	u32 fd;
+	__u32 fd;
 	const char *buf;
 	const struct iovec *iov;
 	size_t iovlen;
@@ -83,8 +96,8 @@ typedef struct data_args {
 		unsigned int *msg_len;
 		struct timespec *timestamp_ptr;
 	};
-	u64 start_timestamp;
-	u64 finish_timestamp;
+	__u64 start_timestamp;
+	__u64 finish_timestamp;
 } data_args_t;
 
 struct protocol_data_t {
@@ -93,58 +106,58 @@ struct protocol_data_t {
 };
 
 typedef struct http_perf_data {
-    u32 len;
-    u32 resp_len;
-    u16 status;    
-    u8  ssl;
+    __u32 len;
+    __u32 resp_len;
+    __u16 status;    
+    __u8  ssl;
 } http_perf_data_t;
 
 
 typedef struct socket_data_t {
-	u32 pid;  
-	u32 tid;
-	u32 nsid;
-	u8  comm[16];
+	__u32 pid;  
+	__u32 tid;
+	__u32 nsid;
+	__u8  comm[16];
     http_perf_data_t http_data;
-	u64 socket_id;  
-	u8 l4_dst_addr[IP_V6_ADDR_LEN];
-	u8 l4_rcv_saddr[IP_V6_ADDR_LEN];
-	u8 l4_addr_len;
-	u8 l4_protocol;
-	u16 l4_dport;
-	u16 l4_sport;
-	u16 l4_num;
+	__u64 socket_id;  
+	__u8 l4_dst_addr[IP_V6_ADDR_LEN];
+	__u8 l4_rcv_saddr[IP_V6_ADDR_LEN];
+	__u8 l4_addr_len;
+	__u8 l4_protocol;
+	__u16 l4_dport;
+	__u16 l4_sport;
+	__u16 l4_num;
 
-	u64 timestamp;     
-	u64 start_timestamp;    
-	u64 finish_timestamp;    
-	u8  flow_type;  
-	u8  connection_type;
-	u8  msg_type;
+	__u64 timestamp;     
+	__u64 start_timestamp;    
+	__u64 finish_timestamp;    
+	__u8  flow_type;  
+	__u8  connection_type;
+	__u8  msg_type;
 
-	u64 syscall_len;   
-	u64 data_seq;      
-	u16 data_type;     
-	u16 data_len;      
+	__u64 syscall_len;   
+	__u64 data_seq;      
+	__u16 data_type;     
+	__u16 data_len;      
 	unsigned char data[SOCKET_DATA_SIZE] __attribute__ ((aligned (8)));
 } __attribute__((packed)) socket_data;
 
 
 struct socket_info_t {
-	u64 l7_proto: 8;
-	u64 seq: 56; 
+	__u64 l7_proto: 8;
+	__u64 seq: 56; 
 
-	u8 prev_data[4];
-	u8 flow_type: 1;
-	u8 msg_type: 2;	
-	u8 role: 5;           
+	__u8 prev_data[4];
+	__u8 flow_type: 1;
+	__u8 msg_type: 2;	
+	__u8 role: 5;           
 
-	u32 prev_data_len;
-	u64 trace_id;
-	u64 uid; 
+	__u32 prev_data_len;
+	__u64 trace_id;
+	__u64 uid; 
 };
 
-static __inline void *get_socket_from_fd(int fd_num, u32 pid)
+static __inline void *get_socket_from_fd(int fd_num, __u32 pid)
 {
 	struct task_struct *task = (struct task_struct *)bpf_get_current_task();
 	void *file = NULL;

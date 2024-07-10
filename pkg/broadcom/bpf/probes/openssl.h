@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2024 Broadcom Corporation
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 #ifndef HTTP_SSL_H
 #define HTTP_SSL_H
 
@@ -9,30 +22,30 @@
 
 
 typedef struct openssl_args {
-    u64 ssl; 
-    u64 buf; 
-    u64 timestamp;
-    u64 len_ptr;
+    __u64 ssl; 
+    __u64 buf; 
+    __u64 timestamp;
+    __u64 len_ptr;
 } openssl_args_t;
 
 
-BPF_LRU_MAP_PINNED(ssl_pid_metadata, 2000, u64, u64)
+BPF_LRU_MAP_PINNED(ssl_pid_metadata, 2000, __u64, __u64)
 
-BPF_LRU_MAP_PINNED(ssl_read_args, 2000, u64, openssl_args_t)
+BPF_LRU_MAP_PINNED(ssl_read_args, 2000, __u64, openssl_args_t)
 
-BPF_LRU_MAP_PINNED(ssl_write_args, 2000, u64, openssl_args_t)
+BPF_LRU_MAP_PINNED(ssl_write_args, 2000, __u64, openssl_args_t)
 
-BPF_LRU_MAP_PINNED(ssl_metadata, 1000, u64, u64)
+BPF_LRU_MAP_PINNED(ssl_metadata, 1000, __u64, __u64)
 
-BPF_LRU_MAP_PINNED(ssl_connection, 1000, u64, connection_info_t)
+BPF_LRU_MAP_PINNED(ssl_connection, 1000, __u64, connection_info_t)
 
-BPF_LRU_MAP_PINNED(pid_conn_metadata, 1000, u64, connection_info_t)
+BPF_LRU_MAP_PINNED(pid_conn_metadata, 1000, __u64, connection_info_t)
 
 
-static __always_inline void process_ssl_data(u64 id, openssl_args_t *ssl_args, int bytes_len) {
+static __always_inline void process_ssl_data(__u64 id, openssl_args_t *ssl_args, int bytes_len) {
     if (ssl_args && bytes_len > 0) {
         void *ssl = ((void *)ssl_args->ssl);
-        u64 ssl_ptr = (u64)ssl;
+        __u64 ssl_ptr = (__u64)ssl;
         connection_info_t *conn = bpf_map_lookup_elem(&ssl_connection, &ssl);
 
         if (!conn) {
@@ -43,7 +56,7 @@ static __always_inline void process_ssl_data(u64 id, openssl_args_t *ssl_args, i
                 void *pid_tid_ptr = bpf_map_lookup_elem(&ssl_pid_metadata, &ssl_ptr);
 
                 if (pid_tid_ptr) {
-                    u64 pid_tid;
+                    __u64 pid_tid;
                     bpf_probe_read(&pid_tid, sizeof(pid_tid), pid_tid_ptr);
                     conn = bpf_map_lookup_elem(&pid_conn_metadata, &pid_tid);
                 } 

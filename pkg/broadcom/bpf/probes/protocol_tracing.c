@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2024 Broadcom Corporation
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 #include "vmlinux.h"
 #include "bpf_tracing.h"
 #include "pid.h"
@@ -455,7 +468,7 @@ int socket__protocol_filter(struct __sk_buff *skb) {
     protocol_info_t tcp = {};
     connection_info_t conn = {};
 
-    if (!read_sk_buff(skb, &tcp, &conn)) {
+    if (!read_sk_buffer(skb, &tcp, &conn)) {
         return 0;
     }
 
