@@ -1,16 +1,3 @@
-/*
- * Copyright (C) 2024 Broadcom Corporation
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
 #ifndef SOCKADDR_HELPERS_H
 #define SOCKADDR_HELPERS_H
 
@@ -22,7 +9,7 @@
 #include "protocol.h"
 
 typedef struct accept_args {
-    u64 addr;
+    u64 addr; 
     u64 accept_time;
 } sock_args_t;
 
@@ -52,7 +39,7 @@ static __always_inline bool read_sk_buff(struct __sk_buff *skb, protocol_info_t 
     switch (l3_nw_proto) {
     case ETH_P_IP: {
         u8 hdr_len;
-
+    
         bpf_skb_load_bytes(skb, ETH_HLEN, &hdr_len, sizeof(hdr_len));
         hdr_len &= 0x0f;
         hdr_len *= 4;
@@ -105,17 +92,17 @@ static __always_inline bool read_sk_buff(struct __sk_buff *skb, protocol_info_t 
 
     u8 doff;
     bpf_skb_load_bytes(skb, tcp->hdr_len + offsetof(struct tcp_header, ack_seq) + 4, &doff, sizeof(doff));
-    doff &= 0xf0;
-    doff >>= 4;
-    doff *= 4;
+    doff &= 0xf0; 
+    doff >>= 4; 
+    doff *= 4; 
 
     tcp->hdr_len += doff;
 
     u8 flags;
-    bpf_skb_load_bytes(skb, tcp->hdr_len + offsetof(struct tcp_header, ack_seq) + 4 + 1, &flags, sizeof(flags));
+    bpf_skb_load_bytes(skb, tcp->hdr_len + offsetof(struct tcp_header, ack_seq) + 4 + 1, &flags, sizeof(flags)); 
     tcp->flags = flags;
 
-    if ((skb->len - tcp->hdr_len) < 0) {
+    if ((skb->len - tcp->hdr_len) < 0) { 
         return false;
     }
 
@@ -125,12 +112,12 @@ static __always_inline bool read_sk_buff(struct __sk_buff *skb, protocol_info_t 
 static __always_inline bool parse_sock_info(struct sock *s, connection_info_t *info) {
     short unsigned int skc_family;
     BPF_CORE_READ_INTO(&skc_family, s, __sk_common.skc_family);
-
+    
     if (skc_family == AF_INET) {
         u32 ip4_s_l;
         u32 ip4_d_l;
-        BPF_CORE_READ_INTO(&info->s_port, s, __sk_common.skc_num);
-        BPF_CORE_READ_INTO(&ip4_s_l, s, __sk_common.skc_rcv_saddr);
+        BPF_CORE_READ_INTO(&info->s_port, s, __sk_common.skc_num); 
+        BPF_CORE_READ_INTO(&ip4_s_l, s, __sk_common.skc_rcv_saddr);        
         BPF_CORE_READ_INTO(&info->d_port, s, __sk_common.skc_dport);
         info->d_port = bpf_ntohs(info->d_port);
         BPF_CORE_READ_INTO(&ip4_d_l, s, __sk_common.skc_daddr);
@@ -142,7 +129,7 @@ static __always_inline bool parse_sock_info(struct sock *s, connection_info_t *i
 
         return true;
     } else if (skc_family == AF_INET6) {
-        BPF_CORE_READ_INTO(&info->s_port, s, __sk_common.skc_num);
+        BPF_CORE_READ_INTO(&info->s_port, s, __sk_common.skc_num); 
         BPF_CORE_READ_INTO(&info->s_addr, s, __sk_common.skc_v6_rcv_saddr.in6_u.u6_addr8);
         BPF_CORE_READ_INTO(&info->d_port, s, __sk_common.skc_dport);
         info->d_port = bpf_ntohs(info->d_port);

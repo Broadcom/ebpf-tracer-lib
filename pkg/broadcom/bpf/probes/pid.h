@@ -1,16 +1,3 @@
-/*
- * Copyright (C) 2024 Broadcom Corporation
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
 #ifndef PID_H
 #define PID_H
 
@@ -22,14 +9,14 @@
 
 typedef struct pid_ns_key {
     u32 nsid;
-    u32 pid;
+    u32 pid;  
 } __attribute__((packed)) pid_ns_key_t;
 
 
 typedef struct pid_info_t {
     u32 host_pid;
     u32 user_pid;
-    u32 ns;
+    u32 ns; 
 } __attribute__((packed)) pid_info;
 
 

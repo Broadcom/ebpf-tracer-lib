@@ -1,16 +1,3 @@
-/*
- * Copyright (C) 2024 Broadcom Corporation
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
 #ifndef HTTP_TYPES_H
 #define HTTP_TYPES_H
 
@@ -19,8 +6,8 @@
 #include "protocol.h"
 #include "pid.h"
 
-#define HTTP_BUFFER_SIZE 160
-#define AF_INET		2
+#define HTTP_BUFFER_SIZE 160 
+#define AF_INET		2	
 #define AF_INET6	10
 
 #define IP_V6_ADDR_LEN 16
@@ -28,14 +15,14 @@
 
 #define EPHEMERAL_PORT_MIN 32768
 
-#define	EINPROGRESS	115
+#define	EINPROGRESS	115	
 
-#define ETH_HLEN	14
-#define ETH_P_IP	0x0800
-#define ETH_P_IPV6	0x86DD
+#define ETH_HLEN	14          
+#define ETH_P_IP	0x0800      
+#define ETH_P_IPV6	0x86DD		
 
 
-#define IPPROTO_TCP 6
+#define IPPROTO_TCP 6     
 
 typedef struct http_connection_info {
     u8  s_addr[IP_V6_ADDR_LEN];
@@ -56,14 +43,14 @@ typedef struct send_args {
 } send_args_t;
 
 typedef struct http_data {
-    u8 flags;
+    u8 flags; 
     connection_info_t conn_info;
     u64 start_monotime_ns;
     u64 end_monotime_ns;
-    unsigned char buf[HTTP_BUFFER_SIZE] __attribute__ ((aligned (8)));
+    unsigned char buf[HTTP_BUFFER_SIZE] __attribute__ ((aligned (8))); 
     u32 len;
     u32 resp_len;
-    u16 status;
+    u16 status;    
     u8  type;
     u8  ssl;
     u32 role;

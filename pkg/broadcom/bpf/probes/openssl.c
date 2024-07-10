@@ -1,16 +1,3 @@
-/*
- * Copyright (C) 2024 Broadcom Corporation
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
 #include "vmlinux.h"
 #include "bpf_tracing.h"
 #include "bpf_helpers.h"
@@ -100,7 +87,7 @@ int BPF_UPROBE(uprobe_ssl_do_handshake, void *s) {
 SEC("uretprobe/libssl.so:SSL_do_handshake")
 int BPF_URETPROBE(uretprobe_ssl_do_handshake, int ret) {
     u64 id = bpf_get_current_pid_tgid();
-
+    
     if (!isWhitelisted(id)) {
         return 0;
     }
@@ -167,7 +154,7 @@ int BPF_UPROBE(uprobe_ssl_read_ex, void *ssl, const void *buf, int num, size_t *
 
     bpf_map_update_elem(&ssl_read_args, &id, &ssl_args, BPF_ANY);
     bpf_map_update_elem(&ssl_pid_metadata, &ssl_args.ssl, &id, BPF_NOEXIST);
-
+    
     return 0;
 }
 

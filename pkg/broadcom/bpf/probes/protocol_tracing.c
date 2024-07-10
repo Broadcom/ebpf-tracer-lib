@@ -1,16 +1,3 @@
-/*
- * Copyright (C) 2024 Broadcom Corporation
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
 #include "vmlinux.h"
 #include "bpf_tracing.h"
 #include "pid.h"
@@ -56,7 +43,7 @@ int BPF_KPROBE(kprobe_tcp_rcv_established, struct sock *sk, struct sk_buff *skb)
     pid_connection_info_t info = {};
 
     if (parse_sock_info(sk, &info.conn)) {
-        info.pid = pid_from_pid_tgid(id);
+        info.pid = pid_from_pid_tgid(id);        
 
         http_connection_metadata_t httpconn = {};
         get_pid_namespace(&httpconn.pid);
@@ -64,7 +51,7 @@ int BPF_KPROBE(kprobe_tcp_rcv_established, struct sock *sk, struct sk_buff *skb)
 
         httpconn.type = EVENT_HTTP_DATA;
 		httpconn.role = CONNECTION_TYPE_SERVER;
-        bpf_map_update_elem(&filtered_connections, &info, &httpconn, BPF_NOEXIST);
+        bpf_map_update_elem(&filtered_connections, &info, &httpconn, BPF_NOEXIST); 
         bpf_map_update_elem(&pid_conn_metadata, &id, &info, BPF_ANY);
     }
 
@@ -103,8 +90,8 @@ int BPF_KRETPROBE(kretprobe_sys_accept4, uint fd)
         get_pid_namespace(&httpconn.pid);
         httpconn.type = EVENT_HTTP_DATA;
 		httpconn.role = CONNECTION_TYPE_SERVER;
-        bpf_map_update_elem(&filtered_connections, &info, &httpconn, BPF_ANY);
-        bpf_map_update_elem(&pid_conn_metadata, &id, &info, BPF_ANY);
+        bpf_map_update_elem(&filtered_connections, &info, &httpconn, BPF_ANY); 
+        bpf_map_update_elem(&pid_conn_metadata, &id, &info, BPF_ANY); 
     }
 
 cleanup:
@@ -169,7 +156,7 @@ int BPF_KRETPROBE(kretprobe_sys_connect, int fd)
         get_pid_namespace(&httpconn.pid);
         httpconn.type = EVENT_HTTP_DATA;
 		httpconn.role = CONNECTION_TYPE_CLIENT;
-        bpf_map_update_elem(&filtered_connections, &info, &httpconn, BPF_ANY);
+        bpf_map_update_elem(&filtered_connections, &info, &httpconn, BPF_ANY); 
         bpf_map_update_elem(&pid_conn_metadata, &id, &info, BPF_ANY);
     }
 
@@ -196,7 +183,7 @@ int BPF_KPROBE(kprobe_tcp_sendmsg, struct sock *sk, struct msghdr *msg, size_t s
             void *iovec_ptr = read_message_header(msg);
             if (iovec_ptr) {
                 handle_protocol_data(&info, iovec_ptr, size, 0);
-            }
+            } 
         }
 
         void *ssl = 0;
@@ -235,7 +222,7 @@ int BPF_KRETPROBE(kretprobe_tcp_sendmsg, int sent_len) {
 
     send_args_t *s_args = bpf_map_lookup_elem(&active_send_args, &id);
     if (s_args) {
-        if (sent_len < MIN_HTTP_SIZE) {
+        if (sent_len < MIN_HTTP_SIZE) { 
             complete_http_transaction(&s_args->p_conn);
         }
     }
@@ -306,12 +293,12 @@ int BPF_KPROBE(kprobe_sys_exit, int status) {
     }
 
     bpf_debug_printk("sys_exit %d, pid=%d", id, pid_from_pid_tgid(id));
-
+ 
     send_args_t *s_args = bpf_map_lookup_elem(&active_send_args, &id);
     if (s_args) {
         complete_http_transaction(&s_args->p_conn);
     }
-
+    
     return 0;
 }
 
@@ -479,7 +466,7 @@ int socket__protocol_filter(struct __sk_buff *skb) {
     if (!tcp_close(&tcp) && tcp_empty(&tcp, skb)) {
         return 0;
     }
-
+    
     unsigned char buf[MIN_HTTP_SIZE] = {0};
     bpf_skb_load_bytes(skb, tcp.hdr_len, (void *)buf, sizeof(buf));
 

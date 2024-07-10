@@ -1,16 +1,3 @@
-/*
- * Copyright (C) 2024 Broadcom Corporation
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
 #ifndef _TYPES_H
 #define _TYPES_H
 
@@ -24,7 +11,7 @@
         __uint(max_entries, _map_max_entries);              \
         __uint(pinning, _map_pin);                          \
         __uint(map_flags, _map_flags);                      \
-    } _map_name SEC(".maps");
+    } _map_name SEC(".maps");                               
 
 #define BPF_RINGBUF_MAP(_map_name, _map_max_entries, _key_type, _value_type) \
     BPF_MAP_TYPE(_map_name, BPF_MAP_TYPE_RINGBUF, _map_max_entries, _key_type, _value_type, 0, 0)

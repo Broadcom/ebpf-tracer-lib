@@ -1,16 +1,3 @@
-/*
- * Copyright (C) 2024 Broadcom Corporation
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
 #ifndef HTTP_SSL_H
 #define HTTP_SSL_H
 
@@ -22,8 +9,8 @@
 
 
 typedef struct openssl_args {
-    u64 ssl;
-    u64 buf;
+    u64 ssl; 
+    u64 buf; 
     u64 timestamp;
     u64 len_ptr;
 } openssl_args_t;
@@ -52,16 +39,16 @@ static __always_inline void process_ssl_data(u64 id, openssl_args_t *ssl_args, i
             conn = bpf_map_lookup_elem(&pid_conn_metadata, &id);
 
             if (!conn) {
-
+            
                 void *pid_tid_ptr = bpf_map_lookup_elem(&ssl_pid_metadata, &ssl_ptr);
 
                 if (pid_tid_ptr) {
                     u64 pid_tid;
                     bpf_probe_read(&pid_tid, sizeof(pid_tid), pid_tid_ptr);
                     conn = bpf_map_lookup_elem(&pid_conn_metadata, &pid_tid);
-                }
+                } 
             }
-
+        
             if (conn) {
                 bpf_map_delete_elem(&pid_conn_metadata, &id);
                 connection_info_t c;
@@ -89,7 +76,7 @@ static __always_inline void process_ssl_data(u64 id, openssl_args_t *ssl_args, i
             };
             bpf_debug_printk("sending data pid=%d", pid_from_pid_tgid(id));
             handle_protocol_data(&pid_conn, (void *)ssl_args->buf, bytes_len, 1);
-        }
+        } 
     }
 }
 

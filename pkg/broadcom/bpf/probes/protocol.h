@@ -1,16 +1,3 @@
-/*
- * Copyright (C) 2024 Broadcom Corporation
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
 #ifndef __PROTO_H__
 #define __PROTO_H__
 
@@ -21,9 +8,9 @@
 #define SOCK_CHECK_TYPE_UDP             1
 #define SOCK_CHECK_TYPE_TCP_ES          2
 
-#define AF_INET         2
+#define AF_INET         2	
 #define PF_INET         AF_INET
-#define AF_INET6        10
+#define AF_INET6        10	
 #define PF_INET6        AF_INET6
 
 #define SOCKET_DATA_SIZE 1024
@@ -32,14 +19,14 @@
 
 
 #define EPHEMERAL_PORT_MIN 32768
-#define	EINPROGRESS	115
+#define	EINPROGRESS	115	
 
-#define ETH_HLEN	14
-#define ETH_P_IP	0x0800
-#define ETH_P_IPV6	0x86DD
+#define ETH_HLEN	14          
+#define ETH_P_IP	0x0800      
+#define ETH_P_IPV6	0x86DD		
 
 
-#define IPPROTO_TCP 6
+#define IPPROTO_TCP 6          
 
 #define TCPHDR_FIN 0x01
 #define TCPHDR_SYN 0x02
@@ -82,7 +69,7 @@ enum protocol_monitored_type {
 };
 
 typedef struct recv_args {
-    u64 sock_ptr;
+    u64 sock_ptr; 
     u64 iovec_ptr;
 } recv_args_t;
 
@@ -108,18 +95,18 @@ struct protocol_data_t {
 typedef struct http_perf_data {
     u32 len;
     u32 resp_len;
-    u16 status;
+    u16 status;    
     u8  ssl;
 } http_perf_data_t;
 
 
 typedef struct socket_data_t {
-	u32 pid;
+	u32 pid;  
 	u32 tid;
 	u32 nsid;
 	u8  comm[16];
     http_perf_data_t http_data;
-	u64 socket_id;
+	u64 socket_id;  
 	u8 l4_dst_addr[IP_V6_ADDR_LEN];
 	u8 l4_rcv_saddr[IP_V6_ADDR_LEN];
 	u8 l4_addr_len;
@@ -128,33 +115,33 @@ typedef struct socket_data_t {
 	u16 l4_sport;
 	u16 l4_num;
 
-	u64 timestamp;
-	u64 start_timestamp;
-	u64 finish_timestamp;
-	u8  flow_type;
+	u64 timestamp;     
+	u64 start_timestamp;    
+	u64 finish_timestamp;    
+	u8  flow_type;  
 	u8  connection_type;
 	u8  msg_type;
 
-	u64 syscall_len;
-	u64 data_seq;
-	u16 data_type;
-	u16 data_len;
+	u64 syscall_len;   
+	u64 data_seq;      
+	u16 data_type;     
+	u16 data_len;      
 	unsigned char data[SOCKET_DATA_SIZE] __attribute__ ((aligned (8)));
 } __attribute__((packed)) socket_data;
 
 
 struct socket_info_t {
 	u64 l7_proto: 8;
-	u64 seq: 56;
+	u64 seq: 56; 
 
 	u8 prev_data[4];
 	u8 flow_type: 1;
-	u8 msg_type: 2;
-	u8 role: 5;
+	u8 msg_type: 2;	
+	u8 role: 5;           
 
 	u32 prev_data_len;
 	u64 trace_id;
-	u64 uid;
+	u64 uid; 
 };
 
 static __inline void *get_socket_from_fd(int fd_num, u32 pid)
