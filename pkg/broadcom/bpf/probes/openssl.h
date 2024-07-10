@@ -22,46 +22,46 @@
 
 
 typedef struct openssl_args {
-    u64 ssl;
-    u64 buf;
-    u64 timestamp;
-    u64 len_ptr;
+    __u64 ssl; 
+    __u64 buf; 
+    __u64 timestamp;
+    __u64 len_ptr;
 } openssl_args_t;
 
 
-BPF_LRU_MAP_PINNED(ssl_pid_metadata, 2000, u64, u64)
+BPF_LRU_MAP_PINNED(ssl_pid_metadata, 2000, __u64, __u64)
 
-BPF_LRU_MAP_PINNED(ssl_read_args, 2000, u64, openssl_args_t)
+BPF_LRU_MAP_PINNED(ssl_read_args, 2000, __u64, openssl_args_t)
 
-BPF_LRU_MAP_PINNED(ssl_write_args, 2000, u64, openssl_args_t)
+BPF_LRU_MAP_PINNED(ssl_write_args, 2000, __u64, openssl_args_t)
 
-BPF_LRU_MAP_PINNED(ssl_metadata, 1000, u64, u64)
+BPF_LRU_MAP_PINNED(ssl_metadata, 1000, __u64, __u64)
 
-BPF_LRU_MAP_PINNED(ssl_connection, 1000, u64, connection_info_t)
+BPF_LRU_MAP_PINNED(ssl_connection, 1000, __u64, connection_info_t)
 
-BPF_LRU_MAP_PINNED(pid_conn_metadata, 1000, u64, connection_info_t)
+BPF_LRU_MAP_PINNED(pid_conn_metadata, 1000, __u64, connection_info_t)
 
 
-static __always_inline void process_ssl_data(u64 id, openssl_args_t *ssl_args, int bytes_len) {
+static __always_inline void process_ssl_data(__u64 id, openssl_args_t *ssl_args, int bytes_len) {
     if (ssl_args && bytes_len > 0) {
         void *ssl = ((void *)ssl_args->ssl);
-        u64 ssl_ptr = (u64)ssl;
+        __u64 ssl_ptr = (__u64)ssl;
         connection_info_t *conn = bpf_map_lookup_elem(&ssl_connection, &ssl);
 
         if (!conn) {
             conn = bpf_map_lookup_elem(&pid_conn_metadata, &id);
 
             if (!conn) {
-
+            
                 void *pid_tid_ptr = bpf_map_lookup_elem(&ssl_pid_metadata, &ssl_ptr);
 
                 if (pid_tid_ptr) {
-                    u64 pid_tid;
+                    __u64 pid_tid;
                     bpf_probe_read(&pid_tid, sizeof(pid_tid), pid_tid_ptr);
                     conn = bpf_map_lookup_elem(&pid_conn_metadata, &pid_tid);
-                }
+                } 
             }
-
+        
             if (conn) {
                 bpf_map_delete_elem(&pid_conn_metadata, &id);
                 connection_info_t c;
@@ -89,7 +89,7 @@ static __always_inline void process_ssl_data(u64 id, openssl_args_t *ssl_args, i
             };
             bpf_debug_printk("sending data pid=%d", pid_from_pid_tgid(id));
             handle_protocol_data(&pid_conn, (void *)ssl_args->buf, bytes_len, 1);
-        }
+        } 
     }
 }
 

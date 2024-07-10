@@ -23,27 +23,27 @@
 #include "pid.h"
 
 
-#define MIN_HTTP_SIZE 12
+#define MIN_HTTP_SIZE 12 
 #define MIN_MYSQL_SIZE 5
-#define RESPONSE_STATUS_POS 9
+#define RESPONSE_STATUS_POS 9 
 #define DATA_BUF_MAX  32
 
 
-BPF_HASH_MAP(active_wr_args_map, 1000, u64, data_args_t)
+BPF_HASH_MAP(active_wr_args_map, 1000, __u64, data_args_t)
 
-BPF_HASH_MAP(active_rd_args_map, 1000, u64, data_args_t)
+BPF_HASH_MAP(active_rd_args_map, 1000, __u64, data_args_t)
 
-BPF_HASH_MAP(socket_info_map, 1000, u64, struct socket_info_t)
+BPF_HASH_MAP(socket_info_map, 1000, __u64, struct socket_info_t)
 
-BPF_PER_EVENT_ARRAY_MAP(socket_data_map, 1000, int, u32)
+BPF_PER_EVENT_ARRAY_MAP(socket_data_map, 1000, int, __u32)
 
-BPF_LRU_MAP(active_accept_args, 1000, u64, sock_args_t)
+BPF_LRU_MAP(active_accept_args, 1000, __u64, sock_args_t)
 
-BPF_LRU_MAP(active_connect_args, 1000, u64, sock_args_t)
+BPF_LRU_MAP(active_connect_args, 1000, __u64, sock_args_t)
 
-BPF_LRU_MAP(active_recv_args, 1000, u64, recv_args_t)
+BPF_LRU_MAP(active_recv_args, 1000, __u64, recv_args_t)
 
-BPF_HASH_MAP(connection_type_map, 1000, u64, u32)
+BPF_HASH_MAP(connection_type_map, 1000, __u64, __u32)
 
 BPF_LRU_MAP_PINNED(filtered_connections, 1000, pid_connection_info_t, http_connection_metadata_t)
 
@@ -53,39 +53,39 @@ BPF_LRU_MAP_PINNED(http_conn_map, 1024, connection_info_t, http_data_t)
 
 BPF_PERCPU_ARRAY_MAP(httpinfo_map, 1024, int, http_data_t)
 
-BPF_LRU_MAP(active_send_args, 1000, u64, send_args_t)
+BPF_LRU_MAP(active_send_args, 1000, __u64, send_args_t)
 
 
 
 struct conn_info_t {
-	u8 l4_dst_addr[IP_V6_ADDR_LEN];
-	u8 l4_rcv_saddr[IP_V6_ADDR_LEN];
-	u8 l4_addr_len;
-	u8 l4_protocol;
-	u16 l4_dport;
-	u16 l4_sport;
-	u16 l4_num;
-	u16 skc_family;
-	u16 sk_type;
-	u8  skc_ipv6only;
-	u32 fd;
+	__u8 l4_dst_addr[IP_V6_ADDR_LEN];
+	__u8 l4_rcv_saddr[IP_V6_ADDR_LEN];
+	__u8 l4_addr_len;
+	__u8 l4_protocol;
+	__u16 l4_dport;
+	__u16 l4_sport;
+	__u16 l4_num;
+	__u16 skc_family;	
+	__u16 sk_type;	
+	__u8  skc_ipv6only;
+	__u32 fd;
 	void *sk;
 
 	enum protocol_monitored_type protocol;
 	enum message_type message_type;
 
-	enum dataflow_type flow_type;
+	enum dataflow_type flow_type; 
 	size_t prev_count;
 	char prev_buf[4];
-	struct socket_info_t *socket_info_ptr;
+	struct socket_info_t *socket_info_ptr; 
 };
 
 typedef long __kernel_time_t;
 
 typedef struct {
-	u32 payload_length:24;
-	u8 seqid;
-	u8 command_type;
+	__u32 payload_length:24;
+	__u8 seqid;
+	__u8 command_type;
 } mysql_header;
 
 struct timespec {
@@ -95,36 +95,36 @@ struct timespec {
 
 
 struct syscall_enter_ctx {
-	u64 pad_0;
-	int syscall_nr;
-	u32 pad_1;
+	__u64 pad_0;		
+	int syscall_nr;	
+	__u32 pad_1;		
 	union {
 		struct {
-			u64 fd;
-			char *buf;
+			__u64 fd;		
+			char *buf;		
 		};
 
 		struct {
-			clockid_t which_clock;
-			struct timespec * tp;
+			clockid_t which_clock; 
+			struct timespec * tp;  
 		};
 	};
-	size_t count;
+	size_t count;		
 };
 
 struct syscall_exit_ctx {
-	u64 pad_0;
-	int syscall_nr;
-	u32 pad_1;
-	u64 ret;
+	__u64 pad_0;		
+	int syscall_nr;	
+	__u32 pad_1;		
+	__u64 ret;		
 };
 
 
-static __always_inline bool is_mysql_data(unsigned char *p, u32 len) {
-    static const u8 kComQuery = 0x03;
-	static const u8 kComGreetingV9 = 0x09;
-	static const u8 kComGreetingV10 = 0x0a;
-	static const u8 kComStmtPrepare = 0x16;
+static __always_inline bool is_mysql_data(unsigned char *p, __u32 len) {
+    static const __u8 kComQuery = 0x03;
+	static const __u8 kComGreetingV9 = 0x09;
+	static const __u8 kComGreetingV10 = 0x0a;
+	static const __u8 kComStmtPrepare = 0x16;
 
     if (len < MIN_MYSQL_SIZE) {
         return false;
@@ -149,19 +149,19 @@ static __always_inline bool is_mysql_data(unsigned char *p, u32 len) {
 }
 
 
-static __always_inline bool is_http(unsigned char *p, u32 len, u8 *message_type) {
+static __always_inline bool is_http(unsigned char *p, __u32 len, __u8 *message_type) {
     if (len < MIN_HTTP_SIZE) {
         return false;
     }
     if ((p[0] == 'H') && (p[1] == 'T') && (p[2] == 'T') && (p[3] == 'P')) {
        *message_type = RESPONSE_TYPE;
     } else if (
-		((p[0] == 'H') && (p[1] == 'E') && (p[2] == 'A') && (p[3] == 'D') && (p[4] == ' ') && (p[5] == '/')) ||
-        ((p[0] == 'G') && (p[1] == 'E') && (p[2] == 'T') && (p[3] == ' ') && (p[4] == '/')) ||
-		((p[0] == 'P') && (p[1] == 'U') && (p[2] == 'T') && (p[3] == ' ') && (p[4] == '/')) ||
-        ((p[0] == 'P') && (p[1] == 'O') && (p[2] == 'S') && (p[3] == 'T') && (p[4] == ' ') && (p[5] == '/')) ||
-        ((p[0] == 'P') && (p[1] == 'A') && (p[2] == 'T') && (p[3] == 'C') && (p[4] == 'H') && (p[5] == ' ') && (p[6] == '/')) ||
-        ((p[0] == 'D') && (p[1] == 'E') && (p[2] == 'L') && (p[3] == 'E') && (p[4] == 'T') && (p[5] == 'E') && (p[6] == ' ') && (p[7] == '/')) ||
+		((p[0] == 'H') && (p[1] == 'E') && (p[2] == 'A') && (p[3] == 'D') && (p[4] == ' ') && (p[5] == '/')) ||                                    
+        ((p[0] == 'G') && (p[1] == 'E') && (p[2] == 'T') && (p[3] == ' ') && (p[4] == '/')) ||                                                      
+		((p[0] == 'P') && (p[1] == 'U') && (p[2] == 'T') && (p[3] == ' ') && (p[4] == '/')) ||                                                      
+        ((p[0] == 'P') && (p[1] == 'O') && (p[2] == 'S') && (p[3] == 'T') && (p[4] == ' ') && (p[5] == '/')) ||                                     
+        ((p[0] == 'P') && (p[1] == 'A') && (p[2] == 'T') && (p[3] == 'C') && (p[4] == 'H') && (p[5] == ' ') && (p[6] == '/')) ||                   
+        ((p[0] == 'D') && (p[1] == 'E') && (p[2] == 'L') && (p[3] == 'E') && (p[4] == 'T') && (p[5] == 'E') && (p[6] == ' ') && (p[7] == '/')) ||   
         ((p[0] == 'O') && (p[1] == 'P') && (p[2] == 'T') && (p[3] == 'I') && (p[4] == 'O') && (p[5] == 'N') && (p[6] == 'S') && (p[7] == ' ') && (p[8] == '/'))
     ) {
         *message_type = REQUEST_TYPE;
@@ -171,7 +171,7 @@ static __always_inline bool is_http(unsigned char *p, u32 len, u8 *message_type)
 }
 
 struct _iov_iter {
-	u8 iter_type;
+	__u8 iter_type;
 	bool copy_mc;
 	bool nofault;
 	bool data_source;
@@ -195,9 +195,9 @@ struct _iov_iter {
 	};
 };
 
-static __always_inline u64 get_connkey(u64 param_1, u64 param_2)
+static __always_inline __u64 get_connkey(__u64 param_1, __u64 param_2)
 {
-	return ((param_1 << 32) | (u32)param_2);
+	return ((param_1 << 32) | (__u32)param_2);
 }
 
 
@@ -208,10 +208,10 @@ static __always_inline void *read_message_header(struct msghdr *mheader) {
     bpf_probe_read_kernel(&m_flags, sizeof(unsigned int), &(mheader->msg_flags));
     bpf_probe_read_kernel(&msg_iter, sizeof(struct iov_iter), &(mheader->msg_iter));
 
-    u8 msg_iter_type = 0;
+    __u8 msg_iter_type = 0;
 
     if (bpf_core_field_exists(msg_iter.iter_type)) {
-        bpf_probe_read(&msg_iter_type, sizeof(u8), &(msg_iter.iter_type));
+        bpf_probe_read(&msg_iter_type, sizeof(__u8), &(msg_iter.iter_type));
     }
 
     bpf_debug_printk("message header type %d, iter type %d", m_flags, msg_iter_type);
@@ -223,7 +223,7 @@ static __always_inline void *read_message_header(struct msghdr *mheader) {
     } else {
         struct _iov_iter _msg_iter;
         bpf_probe_read_kernel(&_msg_iter, sizeof(struct _iov_iter), &(mheader->msg_iter));
-
+        
         if (msg_iter_type == 5) {
             struct iovec vec;
             bpf_probe_read(&vec, sizeof(struct iovec), &(_msg_iter.__ubuf_iovec));
@@ -231,9 +231,9 @@ static __always_inline void *read_message_header(struct msghdr *mheader) {
             return vec.iov_base;
         } else {
             bpf_probe_read(&iov, sizeof(struct iovec *), &(_msg_iter.__iov));
-        }
+        }     
     }
-
+    
     if (!iov) {
         return NULL;
     }
@@ -245,7 +245,7 @@ static __always_inline void *read_message_header(struct msghdr *mheader) {
 
     struct iovec vec;
     bpf_probe_read(&vec, sizeof(struct iovec), iov);
-    return vec.iov_base;
+    return vec.iov_base;    
 }
 
 
@@ -262,16 +262,16 @@ static __always_inline void send_http_data(http_data_t *info) {
     if (info->start_monotime_ns != 0 && info->status != 0 && info->pid.host_pid != 0) {
 		socket_data *perf_data = bpf_ringbuf_reserve(&events, sizeof(socket_data), 0);
 
-		u64 pid_tgid = bpf_get_current_pid_tgid();
-		u32 pid = pid_from_pid_tgid(pid_tgid);
-
+		__u64 pid_tgid = bpf_get_current_pid_tgid();
+		__u32 pid = pid_from_pid_tgid(pid_tgid);
+      
         if (perf_data) {
 	        struct data_args* write_args = bpf_map_lookup_elem(&active_wr_args_map, &pid_tgid);
 	        if (write_args != NULL) {
-               u64 conn_key = get_connkey((u64)pid, (u64)write_args->fd);
-	           u32 *role = bpf_map_lookup_elem(&connection_type_map, &conn_key);
+               __u64 conn_key = get_connkey((__u64)pid, (__u64)write_args->fd);
+	           __u32 *role = bpf_map_lookup_elem(&connection_type_map, &conn_key);
 			   perf_data->connection_type = role ? *role: 0;
-	        }
+	        } 
 
 			if (perf_data->connection_type == 0) {
 			    perf_data->connection_type = info->role;
@@ -296,7 +296,7 @@ static __always_inline void send_http_data(http_data_t *info) {
 			perf_data->http_data.ssl = info->ssl;
 
 			bpf_probe_read(perf_data->data, HTTP_BUFFER_SIZE + 1, info->buf);
-
+            
 			bpf_debug_printk("Sending http performance data %lx", perf_data);
 
             bpf_ringbuf_submit(perf_data, 0);
@@ -307,10 +307,10 @@ static __always_inline void send_http_data(http_data_t *info) {
             .pid = pid
         };
         bpf_map_delete_elem(&http_pid_map, &pid_conn);
-    }
+    }        
 }
 
-static __always_inline http_data_t *get_or_set_http_info(http_data_t *info, pid_connection_info_t *pid_conn, u8 message_type) {
+static __always_inline http_data_t *get_or_set_http_info(http_data_t *info, pid_connection_info_t *pid_conn, __u8 message_type) {
     if (message_type == REQUEST_TYPE) {
         http_data_t *prev_info = bpf_map_lookup_elem(&http_pid_map, pid_conn);
         if (prev_info) {
@@ -368,13 +368,13 @@ static __always_inline void handle_http_response(unsigned char *small_buf, pid_c
     send_http_data(info);
 }
 
-static __always_inline void handle_protocol_data(pid_connection_info_t *pid_conn, void *u_buf, int bytes_len, u8 ssl) {
+static __always_inline void handle_protocol_data(pid_connection_info_t *pid_conn, void *u_buf, int bytes_len, __u8 ssl) {
     unsigned char small_buf[MIN_HTTP_SIZE] = {0};
     bpf_probe_read(small_buf, MIN_HTTP_SIZE, u_buf);
 
     bpf_debug_printk("buf=%s, pid=%d", small_buf, pid_conn->pid);
 
-    u8 message_type = UNKNOWN_MESSAGE_TYPE;
+    __u8 message_type = UNKNOWN_MESSAGE_TYPE;
     if (is_http(small_buf, MIN_HTTP_SIZE, &message_type)) {
         http_data_t *in = get_http_info();
         if (!in) {
@@ -390,16 +390,16 @@ static __always_inline void handle_protocol_data(pid_connection_info_t *pid_conn
             if (!info) {
                 return;
             }
-        }
+        } 
 
-        if (message_type == REQUEST_TYPE && (info->status == 0)) {
+        if (message_type == REQUEST_TYPE && (info->status == 0)) {    
             bpf_probe_read(info->buf, HTTP_BUFFER_SIZE, u_buf);
             process_http_request(info, bytes_len);
         } else if (message_type == RESPONSE_TYPE) {
             handle_http_response(small_buf, pid_conn, info, bytes_len);
         } else if (transaction_progress_state(info)) {
             info->len += bytes_len;
-        }
+        }     
 
         bpf_map_delete_elem(&http_conn_map, &pid_conn->conn);
     }
@@ -407,8 +407,8 @@ static __always_inline void handle_protocol_data(pid_connection_info_t *pid_conn
 
 #define BUF_COPY_BLOCK_SIZE 16
 
-static __always_inline void read_skb_bytes(const void *skb, u32 offset, unsigned char *buf, const u32 len) {
-    u32 max = offset + len;
+static __always_inline void read_skb_bytes(const void *skb, __u32 offset, unsigned char *buf, const __u32 len) {
+    __u32 max = offset + len;
     int b = 0;
     for (; b < (HTTP_BUFFER_SIZE/BUF_COPY_BLOCK_SIZE); b++) {
         if ((offset + (BUF_COPY_BLOCK_SIZE - 1)) >= max) {
@@ -543,7 +543,7 @@ static __always_inline enum message_type parse_http_message(const char *buf,
 		if (conn_info->socket_info_ptr->l7_proto != HTTP1_PROTOCOL)
 			return UNKNOWN_MESSAGE_TYPE;
 	}
-
+	
 	if (count < 14) {
 		return UNKNOWN_MESSAGE_TYPE;
 	}
@@ -563,13 +563,13 @@ static __always_inline enum message_type parse_http_message(const char *buf,
 static __always_inline enum message_type parse_mysql_message(const char *buf, size_t count, struct conn_info_t *conn_info)
 {
 	//3, 9, 10, 11, 22, 23, 24
-	static const u8 kComQuery = 0x03;
-	static const u8 kComGreetingV9 = 0x09;
-	static const u8 kComGreetingV10 = 0x0a;
-	static const u8 kComConnect = 0x0b;
-	static const u8 kComStmtPrepare = 0x16;
-	static const u8 kComStmtExecute = 0x17;
-	static const u8 kComStmtClose = 0x19;
+	static const __u8 kComQuery = 0x03;
+	static const __u8 kComGreetingV9 = 0x09;
+	static const __u8 kComGreetingV10 = 0x0a;
+	static const __u8 kComConnect = 0x0b;
+	static const __u8 kComStmtPrepare = 0x16;
+	static const __u8 kComStmtExecute = 0x17;
+	static const __u8 kComStmtClose = 0x19;
 
 	if (is_socket_valid(conn_info->socket_info_ptr)) {
 		bpf_debug_printk("Mysql parser s %d - %d", conn_info->socket_info_ptr->l7_proto, pid_from_pid_tgid(bpf_get_current_pid_tgid()));
@@ -584,15 +584,15 @@ static __always_inline enum message_type parse_mysql_message(const char *buf, si
 
    bpf_debug_printk("Mysql parser  %d", pid_from_pid_tgid(bpf_get_current_pid_tgid()));
 
-	u32 len;
-	u8 seq, com;
+	__u32 len;
+	__u8 seq, com;
 
-	len = *((u32 *) buf) & 0x00ffffff;
+	len = *((__u32 *) buf) & 0x00ffffff;
 	seq = buf[3];
 	com = buf[4];
 
 	if (conn_info->prev_count == 4) {
-		len = *(u32 *) conn_info->prev_buf & 0x00ffffff;
+		len = *(__u32 *) conn_info->prev_buf & 0x00ffffff;
 		if (len == count) {
 			seq = conn_info->prev_buf[3];
 			count += 4;
@@ -624,25 +624,25 @@ static __always_inline enum message_type parse_mysql_message(const char *buf, si
 		if (com ==  kComQuery || com == kComStmtPrepare ||
 	    com == kComStmtExecute) {
 		    return conn_info->flow_type == INFLOW ? REQUEST_TYPE : RESPONSE_TYPE;
-	    }
+	    } 
 		return UNKNOWN_MESSAGE_TYPE;
 	}
 
 	if (len > 10000) {
 		return UNKNOWN_MESSAGE_TYPE;
 	}
-
-
-	if (com != kComGreetingV9 && com != kComGreetingV10 &&
+		
+		
+	if (com != kComGreetingV9 && com != kComGreetingV10 && 
 	    com != kComConnect && com != kComQuery && com != kComStmtPrepare &&
 	    com != kComStmtExecute && com != kComStmtClose) {
 		return UNKNOWN_MESSAGE_TYPE;
 	}
 
 exitmethod:
-	if (is_mysqld("mysqld"))
+	if (is_mysqld("mysqld")) 
 		return conn_info->flow_type == INFLOW ? REQUEST_TYPE : RESPONSE_TYPE;
-	else
+	else 
 		return conn_info->flow_type == INFLOW ? RESPONSE_TYPE : REQUEST_TYPE;
 
 	return UNKNOWN_MESSAGE_TYPE;
@@ -668,7 +668,7 @@ static __always_inline bool filter_by_process_command(void)
 }
 
 static __always_inline struct protocol_data_t parse_protocol_data(const char *buf,
-							 size_t count, struct conn_info_t *conn_info, u8 sk_state)
+							 size_t count, struct conn_info_t *conn_info, __u8 sk_state)
 {
 	struct protocol_data_t protocol_info;
 	protocol_info.protocol = UNKNOWN_PROTOCOL;
@@ -684,12 +684,12 @@ static __always_inline struct protocol_data_t parse_protocol_data(const char *bu
 
 	if (count < 4 || conn_info->sk == NULL)
 		return protocol_info;
-
+		
 	if (conn_info != NULL && is_socket_valid(conn_info->socket_info_ptr)) {
 		if (filter_by_process_command())
 			return protocol_info;
 	}
-
+	
 	bpf_debug_printk("Protocol intial checks passed -> count=%d, sk_state=%d",count, sk_state);
 
 
@@ -699,7 +699,7 @@ static __always_inline struct protocol_data_t parse_protocol_data(const char *bu
 
 	if ((protocol_info.type = parse_http_message(protocol_buffer, count, conn_info)) != UNKNOWN_MESSAGE_TYPE) {
 		protocol_info.protocol = HTTP1_PROTOCOL;
-	}
+	} 
 
 	if (protocol_info.protocol != UNKNOWN_MESSAGE_TYPE) {
         bpf_debug_printk("Protocol found ->  protocol %d", protocol_info.protocol);
@@ -708,12 +708,12 @@ static __always_inline struct protocol_data_t parse_protocol_data(const char *bu
 
 	if (count == 4) {
 		if (conn_info != NULL && is_socket_valid(conn_info->socket_info_ptr)) {
-			*(u32 *) conn_info->socket_info_ptr->prev_data = *(u32 *) protocol_buffer;
+			*(__u32 *) conn_info->socket_info_ptr->prev_data = *(__u32 *) protocol_buffer;
 			conn_info->socket_info_ptr->prev_data_len = 4;
 			conn_info->socket_info_ptr->flow_type =
 			    conn_info->flow_type;
 		} else {
-			*(u32 *) conn_info->prev_buf = *(u32 *) protocol_buffer;
+			*(__u32 *) conn_info->prev_buf = *(__u32 *) protocol_buffer;
 			conn_info->prev_count = 4;
 		}
 
@@ -721,14 +721,14 @@ static __always_inline struct protocol_data_t parse_protocol_data(const char *bu
         bpf_debug_printk("Protocol seen ->  protocol %d", protocol_info.protocol);
 		return protocol_info;
 	}
-
-	if (conn_info->socket_info_ptr != NULL &&
+	
+	if (conn_info->socket_info_ptr != NULL && 
 	    conn_info->socket_info_ptr->prev_data_len != 0) {
 		if (conn_info->flow_type !=
 		    conn_info->socket_info_ptr->flow_type)
 			return protocol_info;
 
-		*(u32 *) conn_info->prev_buf = *(u32 *) conn_info->socket_info_ptr->prev_data;
+		*(__u32 *) conn_info->prev_buf = *(__u32 *) conn_info->socket_info_ptr->prev_data;
 		conn_info->prev_count = 4;
 		conn_info->socket_info_ptr->prev_data_len = 0;
 	}
@@ -742,14 +742,14 @@ static __always_inline struct protocol_data_t parse_protocol_data(const char *bu
 
 static __always_inline void complete_http_transaction(pid_connection_info_t *pid_conn) {
     http_data_t *info = bpf_map_lookup_elem(&http_pid_map, pid_conn);
-    if (info) {
+    if (info) {        
         send_http_data(info);
     }
 }
 
 static __always_inline void process_protocol_data(struct conn_info_t* conn_info,
 				    enum dataflow_type flow_type, const char* buf,
-				    size_t count, u8 sk_type) {
+				    size_t count, __u8 sk_type) {
 	if (conn_info == NULL) {
 		return;
 	}
@@ -766,7 +766,7 @@ static __always_inline void process_protocol_data(struct conn_info_t* conn_info,
 }
 
 
-static __always_inline void delete_socket_info(u64 conn_key,
+static __always_inline void delete_socket_info(__u64 conn_key,
 					struct socket_info_t *socket_info_ptr)
 {
 	if (socket_info_ptr == NULL)
@@ -810,22 +810,22 @@ static __always_inline int process_layer4_data(void *sk,
 	unsigned char skc_state;
 	bpf_core_read(&skc_state, sizeof(unsigned short),
 		      &__sk->__sk_common.skc_state);
-
+    
 
 	if ((1 << skc_state) & ~(TCPF_ESTABLISHED | TCPF_CLOSE_WAIT)) {
 		return SOCK_CHECK_TYPE_ERROR;
 	}
-
+	
 	conn_info->l4_protocol = IPPROTO_TCP;
 	return SOCK_CHECK_TYPE_TCP_ES;
 }
 
-static __always_inline void init_connection_data(u32 tgid, u32 fd,
+static __always_inline void init_connection_data(__u32 tgid, __u32 fd,
 				    struct conn_info_t *conn_info,
 				    void *sk)
 {
 	__be16 inet_dport;
-	u16 inet_sport;
+	__u16 inet_sport;
 	struct sock *__sk = sk;
 	bpf_core_read(&inet_dport, sizeof(inet_dport),
 		      &__sk->__sk_common.skc_dport);
@@ -837,18 +837,18 @@ static __always_inline void init_connection_data(u32 tgid, u32 fd,
 	conn_info->l4_num = inet_sport;
 	conn_info->prev_count = 0;
 	conn_info->flow_type = 0;
-	*((u32 *) conn_info->prev_buf) = 0;
+	*((__u32 *) conn_info->prev_buf) = 0;
 	conn_info->fd = fd;
 
 	conn_info->sk = sk;
-	u64 conn_key = get_connkey((u64)tgid, (u64)conn_info->fd);
+	__u64 conn_key = get_connkey((__u64)tgid, (__u64)conn_info->fd);
 	conn_info->socket_info_ptr = bpf_map_lookup_elem(&socket_info_map, &conn_key);
 
 }
 
 static __always_inline bool get_socket_address_data(struct socket_data_t *perf_data,
 				     void *sk,
-				     u16 skc_family)
+				     __u16 skc_family)
 {
 	if (perf_data == NULL || sk == NULL)
 		return false;
@@ -873,8 +873,8 @@ static __always_inline bool get_socket_address_data(struct socket_data_t *perf_d
 	return true;
 }
 
-static __always_inline void send_data(struct pt_regs *ctx, struct conn_info_t* conn_info,
-const struct data_args* args, u32 syscall_len, u64 timestamp)
+static __always_inline void send_data(struct pt_regs *ctx, struct conn_info_t* conn_info, 
+const struct data_args* args, __u32 syscall_len, __u64 timestamp)
 {
 	if (conn_info == NULL) {
 		return;
@@ -884,10 +884,10 @@ const struct data_args* args, u32 syscall_len, u64 timestamp)
 		return;
 	}
 
-	u64 pid_tgid = bpf_get_current_pid_tgid();
-	u32 tgid = (u32) (pid_tgid >> 32);
-
-	u64 conn_key = get_connkey((u64)tgid, (u64)conn_info->fd);
+	__u64 pid_tgid = bpf_get_current_pid_tgid();
+	__u32 tgid = (__u32) (pid_tgid >> 32);
+	
+	__u64 conn_key = get_connkey((__u64)tgid, (__u64)conn_info->fd);
 
 
 	if (conn_info->message_type == CLEAR) {
@@ -895,7 +895,7 @@ const struct data_args* args, u32 syscall_len, u64 timestamp)
 		return;
 	}
 
-	u32 tcp_seq = 0;
+	__u32 tcp_seq = 0;
 
 	if (conn_info->flow_type == INFLOW && conn_info->l4_protocol == IPPROTO_TCP) {
 		struct tcp_sock *tp_sock = (struct tcp_sock *)conn_info->sk;
@@ -918,7 +918,7 @@ const struct data_args* args, u32 syscall_len, u64 timestamp)
 	    socket_info.msg_type = conn_info->message_type;
 
 	    if (conn_info->message_type == SEEN) {
-		    *(u32 *)socket_info.prev_data = *(u32 *)conn_info->prev_buf;
+		    *(__u32 *)socket_info.prev_data = *(__u32 *)conn_info->prev_buf;
 		    socket_info.prev_data_len = 4;
 		    socket_info.uid = 0;
 	    }
@@ -933,9 +933,9 @@ const struct data_args* args, u32 syscall_len, u64 timestamp)
     socket_data *perf_data = bpf_ringbuf_reserve(&events, sizeof(socket_data), 0);
 	if (!perf_data) {
         return;
-    }
+    } 
 	get_socket_address_data(perf_data, conn_info->sk, conn_info->skc_family);
-	u32 *role = bpf_map_lookup_elem(&connection_type_map, &conn_key);
+	__u32 *role = bpf_map_lookup_elem(&connection_type_map, &conn_key);
 
 	perf_data->l4_protocol = conn_info->l4_protocol;
 	perf_data->l4_dport = conn_info->l4_dport;
@@ -952,32 +952,32 @@ const struct data_args* args, u32 syscall_len, u64 timestamp)
 	perf_data->syscall_len = syscall_len;
 	perf_data->msg_type = conn_info->message_type;
 	perf_data->connection_type = role ? *role: 0;
-
+			
 	bpf_get_current_comm(perf_data->comm, sizeof(perf_data->comm));
 
-	u32 len = syscall_len & (sizeof(perf_data->data) - 1);
+	__u32 len = syscall_len & (sizeof(perf_data->data) - 1);
 
 	if (syscall_len <= sizeof(perf_data->data)) {
 		bpf_probe_read(perf_data->data, len + 1, args->buf);
-	}
+	} 
 	if (syscall_len >= sizeof(perf_data->data)) {
 		if (unlikely(bpf_probe_read(perf_data->data, sizeof(perf_data->data), args->buf) != 0)) {
 			bpf_ringbuf_discard(perf_data, 0);
 			return;
 		}
-		len = sizeof(perf_data->data);
-	}
-
+		len = sizeof(perf_data->data); 
+	} 
+	
 	perf_data->data_len = len;
-
+	
 	bpf_debug_printk("send_data, send ringbuf for pid =%d", tgid);
 	bpf_ringbuf_submit(perf_data, 0);
 }
 
-static __always_inline void process_socket_data(struct pt_regs* ctx, u64 id,
+static __always_inline void process_socket_data(struct pt_regs* ctx, __u64 id,
 				  const enum dataflow_type flow_type,
 				  const struct data_args* args, ssize_t bytes_count) {
-	u32 tgid = id >> 32;
+	__u32 tgid = id >> 32;
 	bpf_debug_printk("process_data  pid= %d, flowtype %d\n", tgid, flow_type);
 	if (args->buf == NULL)
 		return;
@@ -1004,8 +1004,8 @@ static __always_inline void process_socket_data(struct pt_regs* ctx, u64 id,
 	conn_info->sk_type = 0;
 	conn_info->skc_ipv6only = 0;
 
-	u8 sock_state;
-
+	__u8 sock_state;
+	
 	if (!(sk != NULL &&
 	      ((sock_state = process_layer4_data(sk, conn_info))
 	       != SOCK_CHECK_TYPE_ERROR))) {
@@ -1019,7 +1019,7 @@ static __always_inline void process_socket_data(struct pt_regs* ctx, u64 id,
 
 	if (conn_info->protocol == MYSQL_PROTOCOL) {
 	    bpf_debug_printk("Protocol -> protocol=%d, message_type=%d", conn_info->protocol, conn_info->message_type);
-		send_data(ctx, conn_info, args, (u32)bytes_count, args->start_timestamp);
+		send_data(ctx, conn_info, args, (__u32)bytes_count, args->start_timestamp);
 	}
 }
 #endif

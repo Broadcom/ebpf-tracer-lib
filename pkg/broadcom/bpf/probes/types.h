@@ -24,7 +24,7 @@
         __uint(max_entries, _map_max_entries);              \
         __uint(pinning, _map_pin);                          \
         __uint(map_flags, _map_flags);                      \
-    } _map_name SEC(".maps");
+    } _map_name SEC(".maps");                               
 
 #define BPF_RINGBUF_MAP(_map_name, _map_max_entries, _key_type, _value_type) \
     BPF_MAP_TYPE(_map_name, BPF_MAP_TYPE_RINGBUF, _map_max_entries, _key_type, _value_type, 0, 0)

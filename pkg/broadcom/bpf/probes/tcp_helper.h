@@ -30,7 +30,7 @@ static __always_inline bool tcp_ack(protocol_info_t *tcp) {
 }
 
 static __always_inline bool tcp_empty(protocol_info_t *tcp, struct __sk_buff *skb) {
-    return tcp->hdr_len == skb->len;
+    return tcp->hdr_len == skb->len; 
 }
 
 

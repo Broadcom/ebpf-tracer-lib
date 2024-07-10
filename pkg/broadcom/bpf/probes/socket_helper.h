@@ -21,9 +21,9 @@
 #include "http_helper.h"
 #include "protocol.h"
 
-typedef struct accept_args {
-    u64 addr;
-    u64 accept_time;
+typedef struct socket_args {
+    __u64 addr; 
+    __u64 accept_time;
 } sock_args_t;
 
 struct tcp_header {
@@ -37,22 +37,22 @@ struct tcp_header {
     __be16 urg_ptr;
 };
 
-static __always_inline u64 __load_skb(void *ptr, u32 offset) {
-    u16 result = 0;
+static __always_inline u64 load_skb_bytes(void *ptr, u32 offset) {
+    __u16 result = 0;
     bpf_skb_load_bytes(ptr, offset, &result, sizeof(result));
     return __bpf_htons(result);
 }
 
-static __always_inline bool read_sk_buff(struct __sk_buff *skb, protocol_info_t *tcp, connection_info_t *conn) {
-    u16 l3_nw_proto;
-    l3_nw_proto = __load_skb(skb, offsetof(struct ethhdr, h_proto));
+static __always_inline bool read_sk_buffer(struct __sk_buff *skb, protocol_info_t *tcp, connection_info_t *conn) {
+    __u16 l3_nw_proto;
+    l3_nw_proto = load_skb_bytes(skb, offsetof(struct ethhdr, h_proto));
 
-    u8 proto = 0;
+    __u8 proto = 0;
 
     switch (l3_nw_proto) {
     case ETH_P_IP: {
-        u8 hdr_len;
-
+        __u8 hdr_len;
+    
         bpf_skb_load_bytes(skb, ETH_HLEN, &hdr_len, sizeof(hdr_len));
         hdr_len &= 0x0f;
         hdr_len *= 4;
@@ -63,9 +63,9 @@ static __always_inline bool read_sk_buff(struct __sk_buff *skb, protocol_info_t 
 
         bpf_skb_load_bytes(skb, ETH_HLEN + offsetof(struct iphdr, protocol), &proto, sizeof(proto));
 
-        u32 saddr;
+        __u32 saddr;
         bpf_skb_load_bytes(skb, ETH_HLEN + offsetof(struct iphdr, saddr), &saddr, sizeof(saddr));
-        u32 daddr;
+        __u32 daddr;
         bpf_skb_load_bytes(skb, ETH_HLEN + offsetof(struct iphdr, daddr), &daddr, sizeof(daddr));
 
         __builtin_memcpy(conn->s_addr, ip4ip6_prefix, sizeof(ip4ip6_prefix));
@@ -92,30 +92,30 @@ static __always_inline bool read_sk_buff(struct __sk_buff *skb, protocol_info_t 
         return false;
     }
 
-    u16 port;
+    __u16 port;
     bpf_skb_load_bytes(skb, tcp->hdr_len + offsetof(struct tcp_header, source), &port, sizeof(port));
     conn->s_port = __bpf_htons(port);
 
     bpf_skb_load_bytes(skb, tcp->hdr_len + offsetof(struct tcp_header, dest), &port, sizeof(port));
     conn->d_port = __bpf_htons(port);
 
-    u16 seq;
+    __u16 seq;
     bpf_skb_load_bytes(skb, tcp->hdr_len + offsetof(struct tcp_header, seq), &seq, sizeof(seq));
     tcp->seq = __bpf_htons(seq);
 
-    u8 doff;
+    __u8 doff;
     bpf_skb_load_bytes(skb, tcp->hdr_len + offsetof(struct tcp_header, ack_seq) + 4, &doff, sizeof(doff));
-    doff &= 0xf0;
-    doff >>= 4;
-    doff *= 4;
+    doff &= 0xf0; 
+    doff >>= 4; 
+    doff *= 4; 
 
     tcp->hdr_len += doff;
 
-    u8 flags;
-    bpf_skb_load_bytes(skb, tcp->hdr_len + offsetof(struct tcp_header, ack_seq) + 4 + 1, &flags, sizeof(flags));
+    __u8 flags;
+    bpf_skb_load_bytes(skb, tcp->hdr_len + offsetof(struct tcp_header, ack_seq) + 4 + 1, &flags, sizeof(flags)); 
     tcp->flags = flags;
 
-    if ((skb->len - tcp->hdr_len) < 0) {
+    if ((skb->len - tcp->hdr_len) < 0) { 
         return false;
     }
 
@@ -125,12 +125,12 @@ static __always_inline bool read_sk_buff(struct __sk_buff *skb, protocol_info_t 
 static __always_inline bool parse_sock_info(struct sock *s, connection_info_t *info) {
     short unsigned int skc_family;
     BPF_CORE_READ_INTO(&skc_family, s, __sk_common.skc_family);
-
+    
     if (skc_family == AF_INET) {
-        u32 ip4_s_l;
-        u32 ip4_d_l;
-        BPF_CORE_READ_INTO(&info->s_port, s, __sk_common.skc_num);
-        BPF_CORE_READ_INTO(&ip4_s_l, s, __sk_common.skc_rcv_saddr);
+        __u32 ip4_s_l;
+        __u32 ip4_d_l;
+        BPF_CORE_READ_INTO(&info->s_port, s, __sk_common.skc_num); 
+        BPF_CORE_READ_INTO(&ip4_s_l, s, __sk_common.skc_rcv_saddr);        
         BPF_CORE_READ_INTO(&info->d_port, s, __sk_common.skc_dport);
         info->d_port = bpf_ntohs(info->d_port);
         BPF_CORE_READ_INTO(&ip4_d_l, s, __sk_common.skc_daddr);
@@ -142,7 +142,7 @@ static __always_inline bool parse_sock_info(struct sock *s, connection_info_t *i
 
         return true;
     } else if (skc_family == AF_INET6) {
-        BPF_CORE_READ_INTO(&info->s_port, s, __sk_common.skc_num);
+        BPF_CORE_READ_INTO(&info->s_port, s, __sk_common.skc_num); 
         BPF_CORE_READ_INTO(&info->s_addr, s, __sk_common.skc_v6_rcv_saddr.in6_u.u6_addr8);
         BPF_CORE_READ_INTO(&info->d_port, s, __sk_common.skc_dport);
         info->d_port = bpf_ntohs(info->d_port);
